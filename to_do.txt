@@ -1,7 +1,5 @@
 - Not down all the changes in NatNetClient.py (& uncomment stuff)
-- Create venv on Gollum PC
 - Check "Tracking Valid"
 - Create fake data
-- Set up remote connection on Gollum PC (Nicklas)
 - What if a rigid body disappears
 - Track a 2nd body

@@ -1,11 +1,16 @@
 from confluent_kafka import Producer
+import json
 
 
-producer_config = {
-        "bootstrap.servers": "127.0.0.1",
-        "message.max.bytes": "20000000",
-    }
-producer = Producer(producer_config)
+class GollumWriter:
+    def __init__(self, server_address):
+        producer_config = {
+                "bootstrap.servers": server_address,
+                "message.max.bytes": "20000000",
+            }
+        self.producer = Producer(producer_config)
 
-producer.produce("gollum", "test message 1".encode())
-producer.flush()
+    def produce(self, topic, message):
+        message = json.dumps(message)
+        self.producer.produce(topic, message.encode())
+        self.producer.flush()

@@ -3,7 +3,7 @@ import uuid
 
 
 consumer_config = {
-    "bootstrap.servers": "127.0.0.1",
+    "bootstrap.servers": "[::1]:9092",
     "group.id": uuid.uuid4(),
     "default.topic.config": {"auto.offset.reset": "latest"},
 }

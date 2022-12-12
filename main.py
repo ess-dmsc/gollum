@@ -1,7 +1,9 @@
 from gollum_listener import GollumListener
+from gollum_writer import GollumWriter
 
 
 listener = GollumListener("127.0.0.1", "127.0.0.1")
+writer = GollumWriter("[::1]:9092")
 
 frame_msg_queue = listener.frame_msg_queue
 rigid_body_msg_queue = listener.rigid_body_msg_queue
@@ -13,6 +15,9 @@ while True:
 
     print(frame_item)
     print(rigid_body_item)
+
+    writer.produce("gollum", frame_item)
+    writer.produce("gollum", rigid_body_item)
 
     frame_msg_queue.task_done()
     rigid_body_msg_queue.task_done()
