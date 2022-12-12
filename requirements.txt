@@ -1,1 +1,2 @@
 confluent-kafka
+ess-streaming-data-types

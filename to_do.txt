@@ -3,3 +3,5 @@
 - Create fake data
 - What if a rigid body disappears
 - Track a 2nd body
+- Fix the timestamp (related to tracking valid?)
+- Rotation transformation

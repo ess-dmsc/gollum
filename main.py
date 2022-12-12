@@ -1,3 +1,5 @@
+import time
+
 from gollum_listener import GollumListener
 from gollum_writer import GollumWriter
 
@@ -16,7 +18,8 @@ while True:
     print(frame_item)
     print(rigid_body_item)
 
-    writer.produce("gollum", frame_item)
+    stamp_data_received = frame_item["stamp_data_received"]
+    rigid_body_item["timestamp"] = time.time_ns() # stamp_data_received
     writer.produce("gollum", rigid_body_item)
 
     frame_msg_queue.task_done()

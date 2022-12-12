@@ -1,5 +1,6 @@
 from confluent_kafka import Consumer
 import uuid
+from streaming_data_types import deserialise_f144
 
 
 consumer_config = {
@@ -15,4 +16,4 @@ while True:
     if msg is None:
         continue
     elif msg.value():
-        print(msg.value())
+        print(deserialise_f144(msg.value()))
