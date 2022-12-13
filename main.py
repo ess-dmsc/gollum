@@ -15,10 +15,8 @@ while True:
     frame_item = frame_msg_queue.get()
     rigid_body_item = rigid_body_msg_queue.get()
 
-    print(frame_item)
-    print(rigid_body_item)
-
     stamp_data_received = frame_item["stamp_data_received"]
+    print(frame_item)
     rigid_body_item["timestamp"] = time.time_ns() # stamp_data_received
     writer.produce("gollum", rigid_body_item)
 
