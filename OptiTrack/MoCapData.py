@@ -618,25 +618,25 @@ class MoCapData:
         else:
             out_str+="%sNo Rigid Body Data Set\n"%(out_tab_str)
 
-        # if not self.skeleton_data == None:
-        #     out_str+=self.skeleton_data.get_as_string(tab_str, level+1)
-        # else:
-        #     out_str+="%sNo Skeleton Data Set\n"%(out_tab_str)
+        if not self.skeleton_data == None:
+            out_str+=self.skeleton_data.get_as_string(tab_str, level+1)
+        else:
+            out_str+="%sNo Skeleton Data Set\n"%(out_tab_str)
 
         if not self.labeled_marker_data == None:
             out_str+=self.labeled_marker_data.get_as_string(tab_str, level+1)
         else:
             out_str+="%sNo Labeled Marker Data Set\n"%(out_tab_str)
 
-        # if not self.force_plate_data == None:
-        #     out_str+=self.force_plate_data.get_as_string(tab_str, level+1)
-        # else:
-        #     out_str+="%sNo Force Plate Data Set\n"%(out_tab_str)
+        if not self.force_plate_data == None:
+            out_str+=self.force_plate_data.get_as_string(tab_str, level+1)
+        else:
+            out_str+="%sNo Force Plate Data Set\n"%(out_tab_str)
 
-        # if not self.device_data == None:
-        #     out_str+=self.device_data.get_as_string(tab_str, level+1)
-        # else:
-        #     out_str+="%sNo Device Data Set\n"%(out_tab_str)
+        if not self.device_data == None:
+            out_str+=self.device_data.get_as_string(tab_str, level+1)
+        else:
+            out_str+="%sNo Device Data Set\n"%(out_tab_str)
 
         if not self.suffix_data == None:
             out_str+=self.suffix_data.get_as_string(tab_str, level+1)
