@@ -8,3 +8,4 @@
 - What about the calibration data
 - Does the positioning of the cameras matter
 - How should the markers be placed & does the size of the markers matter
+- What does is_recording mean?
