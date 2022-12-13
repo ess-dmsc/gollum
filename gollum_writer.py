@@ -1,6 +1,5 @@
 from confluent_kafka import Producer
 from streaming_data_types import serialise_f144
-import numpy as np
 
 
 class GollumWriter:
