@@ -12,10 +12,15 @@ class GollumWriter:
 
     def produce(self, topic, message):
         timestamp = message["timestamp"]
+        rotation = message["rotation"]
         prefix = f"rigid_body_{message['new_id']}"
         positions_order = ["x", "y", "z"]
 
         for name, value in zip(positions_order, message["position"]):
-            source_name = f"{prefix}_pos_{name}"
-            self.producer.produce(topic, serialise_f144(source_name, value, timestamp))
+            pos_source_name = f"{prefix}_pos_{name}"
+            self.producer.produce(topic, serialise_f144(pos_source_name, value, timestamp))
+
+        rot_source_name = f"{prefix}_rotation"
+        self.producer.produce(topic, serialise_f144(rot_source_name, rotation, timestamp))
+
         self.producer.flush()

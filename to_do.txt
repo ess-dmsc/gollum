@@ -1,11 +1,13 @@
-- Not down all the changes in NatNetClient.py (& uncomment stuff)
-- Check "Tracking Valid" - True if can see all markers else False
 - Create fake data
-- What if a rigid body disappears
-- Track a 2nd body
-- Fix the timestamp (related to tracking valid?)
+- Fix the timestamp
 - Rotation transformation
 - What about the calibration data
 - Does the positioning of the cameras matter
 - How should the markers be placed & does the size of the markers matter
-- What does is_recording mean?
+- What does "is_recording" mean?
+- how to stop
+- if rigid body is tracking invalid then record that in kafka
+   - When first rigid body message received send al00 to kafka
+   - When validity changes, send relevant al00 message (OK for valid & MAJOR for invalid)
+   - Then every 10 secs resend the last update including the original timestamp
+- allow main to take arguments for broker and optitrack ip address, e.g. python main --kafka 127.0.0.1 --ip localhost
