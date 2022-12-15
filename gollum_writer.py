@@ -3,9 +3,9 @@ from streaming_data_types import serialise_f144
 
 
 class GollumWriter:
-    def __init__(self, server_address):
+    def __init__(self, kafka_server):
         producer_config = {
-            "bootstrap.servers": server_address,
+            "bootstrap.servers": kafka_server,
             "message.max.bytes": "20000000",
         }
         self.producer = Producer(producer_config)

@@ -4,10 +4,9 @@
 - What about the calibration data
 - Does the positioning of the cameras matter
 - How should the markers be placed & does the size of the markers matter
-- What does "is_recording" mean?
-- how to stop
+- What does "is_recording" mean
+- how to stop (1. when ctrl-c, how to get back to the command line 2. when we're happy with all the rigid body info)
 - if rigid body is tracking invalid then record that in kafka
    - When first rigid body message received send al00 to kafka
    - When validity changes, send relevant al00 message (OK for valid & MAJOR for invalid)
    - Then every 10 secs resend the last update including the original timestamp
-- allow main to take arguments for broker and optitrack ip address, e.g. python main --kafka 127.0.0.1 --ip localhost
