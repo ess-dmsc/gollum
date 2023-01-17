@@ -363,6 +363,8 @@ class NatNetClient:
             "\tOrientation : [%3.2f, %3.2f, %3.2f, %3.2f]"
             % (rot[0], rot[1], rot[2], rot[3])
         )
+        print(major, minor)
+        self.__unpack_rigid_body_description(data, major, minor)
 
         rigid_body = MoCapData.RigidBody(new_id, pos, rot)
 
