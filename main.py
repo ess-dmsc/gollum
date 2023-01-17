@@ -25,7 +25,7 @@ if __name__ == '__main__':
         stamp_data_received = frame_item["stamp_data_received"]
         # print(frame_item)
         rigid_body_item["timestamp"] = time.time_ns()  # stamp_data_received
-        writer.produce("gollum", rigid_body_item)
+        writer.produce("ymir_metrology", rigid_body_item) # gollum
 
         frame_msg_queue.task_done()
         rigid_body_msg_queue.task_done()
@@ -34,3 +34,4 @@ if __name__ == '__main__':
 
 
 # python main.py -mc 127.0.0.1 -ms 127.0.0.1 -ks [::1]:9092
+# python main.py -mc 127.0.0.1 -ms 127.0.0.1 -ks 10.100.1.19:9092
