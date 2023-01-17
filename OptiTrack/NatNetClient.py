@@ -920,6 +920,7 @@ class NatNetClient:
             offset += len(name) + 1
             rb_desc.set_name(name)
             trace_dd("\tRigid Body Name   : ", name.decode("utf-8"))
+            print(f"1: {name}")
 
         # ID
         new_id = int.from_bytes(data[offset : offset + 4], byteorder="little")
@@ -974,6 +975,7 @@ class NatNetClient:
                     )
                     marker_name = marker_name.decode("utf-8")
                     offset3 += len(marker_name) + 1
+                print(f"2: {marker_name}")
 
                 rb_marker = DataDescriptions.RBMarker(
                     marker_name, active_label, marker_offset
