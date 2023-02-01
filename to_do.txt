@@ -12,3 +12,4 @@
    - Then every 10 secs resend the last update including the original timestamp
 - Create a boundary box with markers to set the limit of the FoV (?)
 - Add a fixed marker/body to be used as a reference
+- Send request --> To get the body names given in Motive

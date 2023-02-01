@@ -25,3 +25,6 @@ class GollumListener:
     def start_streaming(self):
         if not self.streaming_client.run():
             raise RuntimeError("Could not start streaming client.")
+
+    def request_model_definitions(self):
+        self.streaming_client.request_model_definitions()

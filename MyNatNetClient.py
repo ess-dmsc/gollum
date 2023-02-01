@@ -298,6 +298,9 @@ class NatNetClient:
         # self.send_request(self.command_socket, NAT_REQUEST_MODELDEF, "",  (self.server_ip_address, self.command_port) )
         return True
 
+    def request_model_definitions(self):
+        self.send_request(self.command_socket, NAT_REQUEST_MODELDEF, "", (self.server_ip_address, self.command_port))
+
     def send_request(self, in_socket, command, command_str, address):
         # Compose the message in our known message format
         packet_size = 0
