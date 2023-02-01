@@ -210,8 +210,6 @@ class NatNetClient:
                 data, addr = in_socket.recvfrom(recv_buffer_size)
             except socket.error as msg:
                 if stop():
-                    # print("ERROR: command socket access error occurred:\n  %s" %msg)
-                    # return 1
                     print(f"shutting down: {msg}")
 
             if len(data) > 0:
@@ -240,7 +238,7 @@ class NatNetClient:
                     )
         return 0
 
-    def __data_thread_function(self, in_socket, stop, gprint_level):
+    def __data_thread_function(self, in_socket, stop):
         message_id_dict = {}
         data = bytearray(0)
         # 64k buffer size
@@ -263,14 +261,7 @@ class NatNetClient:
                     message_id_dict[tmp_str] = 0
                 message_id_dict[tmp_str] += 1
 
-                # print_level = gprint_level()
-                # if message_id == NAT_FRAMEOFDATA:
-                #     if print_level > 0:
-                #         if (message_id_dict[tmp_str] % print_level) == 0:
-                #             print_level = 1
-                #         else:
-                #             print_level = 0
-                message_id = self.__process_message(data, PRINT_LEVEL)
+                self.__process_message(data, PRINT_LEVEL)
 
                 data = bytearray(0)
         return 0
@@ -345,7 +336,6 @@ class NatNetClient:
             args=(
                 self.data_socket,
                 lambda: self.stop_threads,
-                lambda: PRINT_LEVEL,
             ),
         )
         self.data_thread.start()
