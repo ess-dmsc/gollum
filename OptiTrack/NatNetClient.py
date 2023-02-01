@@ -112,6 +112,7 @@ class NatNetClient:
 
         self.stop_threads = False
 
+
     # Client/server message ids
     NAT_CONNECT = 0
     NAT_SERVERINFO = 1

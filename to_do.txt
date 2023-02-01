@@ -1,7 +1,7 @@
-- Create fake data
-- Fix the timestamp
+- Create fake data (?)
+- Fix the timestamp (email OptiTrack again regarding the "magic numbers" )
 - Rotation transformation
-- What about the calibration data?
+- What about the calibration data, should we stream and/or save those as well?
 - Does the positioning of the cameras matter?
 - How should the markers be placed & does the size of the markers matter?
 - What does "is_recording" mean?
@@ -10,3 +10,5 @@
    - When first rigid body message received send al00 to kafka
    - When validity changes, send relevant al00 message (OK for valid & MAJOR for invalid)
    - Then every 10 secs resend the last update including the original timestamp
+- Create a boundary box with markers to set the limit of the FoV (?)
+- Add a fixed marker/body to be used as a reference
