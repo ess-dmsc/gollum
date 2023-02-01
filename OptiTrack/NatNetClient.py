@@ -364,12 +364,10 @@ class NatNetClient:
             "\tOrientation : [%3.2f, %3.2f, %3.2f, %3.2f]"
             % (rot[0], rot[1], rot[2], rot[3])
         )
+        print(major, minor)
+        self.__unpack_rigid_body_description(data, major, minor)
 
         rigid_body = MoCapData.RigidBody(new_id, pos, rot)
-
-        # Send information to any listener.
-        if self.rigid_body_listener is not None:
-            self.rigid_body_listener(new_id, pos, rot)
 
         # RB Marker Data ( Before version 3.0.  After Version 3.0 Marker data is in description )
         if major < 3 and major != 0:
@@ -428,6 +426,10 @@ class NatNetClient:
                 rigid_body.tracking_valid = True
             else:
                 rigid_body.tracking_valid = False
+
+        # Send information to any listener.
+        if self.rigid_body_listener is not None:
+            self.rigid_body_listener(new_id, pos, rot, rigid_body.tracking_valid)
 
         return offset, rigid_body
 
@@ -921,6 +923,7 @@ class NatNetClient:
             offset += len(name) + 1
             rb_desc.set_name(name)
             trace_dd("\tRigid Body Name   : ", name.decode("utf-8"))
+            print(f"1: {name}")
 
         # ID
         new_id = int.from_bytes(data[offset : offset + 4], byteorder="little")
@@ -975,6 +978,7 @@ class NatNetClient:
                     )
                     marker_name = marker_name.decode("utf-8")
                     offset3 += len(marker_name) + 1
+                print(f"2: {marker_name}")
 
                 rb_marker = DataDescriptions.RBMarker(
                     marker_name, active_label, marker_offset
