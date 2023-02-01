@@ -33,7 +33,8 @@ class Unpacker:
         self.rigid_body_listener = rigid_body_listener
         self.new_frame_listener = new_frame_listener
 
-    def get_message_id(self, data):
+    @staticmethod
+    def get_message_id(data):
         message_id = int.from_bytes(data[0:2], byteorder="little")
         return message_id
 
@@ -526,10 +527,6 @@ class Unpacker:
 
         rigid_body = MoCapData.RigidBody(new_id, pos, rot)
 
-        # Send information to any listener.
-        if self.rigid_body_listener is not None:
-            self.rigid_body_listener(new_id, pos, rot)
-
         # RB Marker Data ( Before version 3.0.  After Version 3.0 Marker data is in description )
         if major < 3 and major != 0:
             # Marker count (4 bytes)
@@ -587,6 +584,10 @@ class Unpacker:
                 rigid_body.tracking_valid = True
             else:
                 rigid_body.tracking_valid = False
+
+        # Send information to any listener.
+        if self.rigid_body_listener is not None:
+            self.rigid_body_listener(new_id, pos, rot, rigid_body.tracking_valid)
 
         return offset, rigid_body
 
