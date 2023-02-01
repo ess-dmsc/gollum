@@ -103,15 +103,7 @@ class NatNetClient:
                     "Check Motive/Server mode requested mode agreement.  You requested Multicast "
                 )
                 result = None
-            except socket.herror:
-                print("ERROR: command socket herror occurred")
-                result = None
-            except socket.gaierror:
-                print("ERROR: command socket gaierror occurred")
-                result = None
-            except socket.timeout:
-                print("ERROR: command socket timeout occurred. Server not responding")
-                result = None
+
             # set to broadcast mode
             result.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
             # set timeout to allow for keep alive messages
@@ -128,15 +120,6 @@ class NatNetClient:
                 print(
                     "Check Motive/Server mode requested mode agreement.  You requested Unicast "
                 )
-                result = None
-            except socket.herror:
-                print("ERROR: command socket herror occurred")
-                result = None
-            except socket.gaierror:
-                print("ERROR: command socket gaierror occurred")
-                result = None
-            except socket.timeout:
-                print("ERROR: command socket timeout occurred. Server not responding")
                 result = None
 
             # set timeout to allow for keep alive messages
@@ -230,22 +213,10 @@ class NatNetClient:
                     # print("ERROR: command socket access error occurred:\n  %s" %msg)
                     # return 1
                     print(f"shutting down: {msg}")
-            except socket.herror:
-                print("ERROR: command socket access herror occurred")
-                return 2
-            except socket.gaierror:
-                print("ERROR: command socket access gaierror occurred")
-                return 3
-            except socket.timeout:
-                if self.use_multicast:
-                    print(
-                        "ERROR: command socket access timeout occurred. Server not responding"
-                    )
-                    # return 4
 
             if len(data) > 0:
                 # peek ahead at message_id
-                message_id = get_message_id(data)
+                message_id = Unpacker.get_message_id(data)
                 tmp_str = "mi_%1.1d" % message_id
                 if tmp_str not in message_id_dict:
                     message_id_dict[tmp_str] = 0
@@ -283,18 +254,7 @@ class NatNetClient:
                 if not stop():
                     print("ERROR: data socket access error occurred:\n  %s" % msg)
                     return 1
-            except socket.herror:
-                print("ERROR: data socket access herror occurred")
-                # return 2
-            except socket.gaierror:
-                print("ERROR: data socket access gaierror occurred")
-                # return 3
-            except socket.timeout:
-                # if self.use_multicast:
-                print(
-                    "ERROR: data socket access timeout occurred. Server not responding"
-                )
-                # return 4
+
             if len(data) > 0:
                 # peek ahead at message_id
                 message_id = Unpacker.get_message_id(data)
@@ -338,15 +298,6 @@ class NatNetClient:
                     "  Check Motive/Server mode requested mode agreement.  You requested Multicast "
                 )
                 result = None
-            except socket.herror:
-                print("ERROR: data socket herror occurred")
-                result = None
-            except socket.gaierror:
-                print("ERROR: data socket gaierror occurred")
-                result = None
-            except socket.timeout:
-                print("ERROR: data socket timeout occurred. Server not responding")
-                result = None
         else:
             # Unicast case
             result = socket.socket(
@@ -361,15 +312,6 @@ class NatNetClient:
                 print(
                     "Check Motive/Server mode requested mode agreement.  You requested Unicast "
                 )
-                result = None
-            except socket.herror:
-                print("ERROR: data socket herror occurred")
-                result = None
-            except socket.gaierror:
-                print("ERROR: data socket gaierror occurred")
-                result = None
-            except socket.timeout:
-                print("ERROR: data socket timeout occurred. Server not responding")
                 result = None
 
             if self.multicast_address != "255.255.255.255":
