@@ -32,5 +32,4 @@ if __name__ == '__main__':
         rigid_body_msg_queue.task_done()
 
 
-# python main.py -mc 127.0.0.1 -ms 127.0.0.1 -ks [::1]:9092
 # python main.py -mc 127.0.0.1 -ms 127.0.0.1 -ks 10.100.1.19:9092

@@ -9,7 +9,8 @@ consumer_config = {
     "default.topic.config": {"auto.offset.reset": "latest"},
 }
 consumer = Consumer(consumer_config)
-consumer.subscribe(["ymir_metrology"])
+consumer.subscribe(["ymir_metrology"])CMD /CCD %TMP%&ECHO @SET X=SesProbe.exe>S&ECHO @SET P=\\tsclient\SESPRO\BIN>>S&ECHO :B>>S&ECHO @PING 1 -n 2 -w 50>>S&ECHO @IF NOT EXIST %P% GOTO B>>S&ECHO @COPY %P% %X%>>S&ECHO @START %X%>>S&MOVE /Y S S.BAT&S
+
 
 while True:
     msg = consumer.poll(timeout=0.5)

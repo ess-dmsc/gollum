@@ -18,8 +18,9 @@ class GollumListener:
         # print(data_dict)
         self.frame_msg_queue.put(data_dict)
 
-    def rigid_body_frame_callback(self, new_id, position, rotation, is_valid):
-        rigid_body_info = {"new_id": new_id, "position": position, "rotation": rotation}
+    def rigid_body_frame_callback(self, new_id, position, rotation, validity):
+        rigid_body_info = {"new_id": new_id, "position": position, "rotation": rotation,
+                           "validity": validity}
         self.rigid_body_msg_queue.put(rigid_body_info)
 
     def start_streaming(self):

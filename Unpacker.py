@@ -1,4 +1,5 @@
 from OptiTrack import MoCapData
+from OptiTrack import DataDescriptions
 import struct
 
 
@@ -28,6 +29,11 @@ FPCalMatrixRow = struct.Struct("<ffffffffffff")
 FPCorners = struct.Struct("<ffffffffffff")
 
 
+def trace_dd(*args):
+    # uncomment the one you want to use
+    # print( "".join(map(str,args)) )
+    pass
+
 class Unpacker:
     def __init__(self, rigid_body_listener, new_frame_listener):
         self.rigid_body_listener = rigid_body_listener
@@ -46,8 +52,11 @@ class Unpacker:
         # skip the 4 bytes for message ID and packet_size
         offset = 4
         if message_id == NAT_FRAMEOFDATA:
-            print("Message ID  : %3.1d NAT_FRAMEOFDATA" % message_id)
-            print("Packet Size : ", packet_size)
+            if major == 0:
+                # don't process until we have established the version
+                return message_id, major, minor
+            #print("Message ID  : %3.1d NAT_FRAMEOFDATA" % message_id)
+            #print("Packet Size : ", packet_size)
 
             offset_tmp, mocap_data = self.__unpack_mocap_data(
                 data[offset:], packet_size, major, minor
@@ -58,12 +67,15 @@ class Unpacker:
             # if print_level >= 1:
             #     print("MoCap Frame: %d\n" % (mocap_data.prefix_data.frame_number))
             #     print("%s\n" % mocap_data_str)
-
+        elif message_id == NAT_SERVERINFO:
+            # This is only called once, just after we connect
+            major, minor = self.__unpack_server_info( data[offset:], packet_size)
+            return message_id, major, minor
         elif message_id == NAT_MODELDEF:
-            print("Message ID  : %3.1d NAT_MODELDEF" % message_id)
-            print("Packet Size : %d" % packet_size)
+            #print("Message ID  : %3.1d NAT_MODELDEF" % message_id)
+            #print("Packet Size : %d" % packet_size)
             offset_tmp, data_descs = self.__unpack_data_descriptions(
-                data[offset:], packet_size, major, minor
+                data[offset:], packet_size, self.major, self.minor
             )
             offset += offset_tmp
             # get a string version of the data for output
@@ -71,23 +83,15 @@ class Unpacker:
             # if print_level > 0:
             #     print("Data Descriptions:\n")
             #     print("%s\n" % (data_descs_str))
-
-        elif message_id == NAT_SERVERINFO:
-            print("Message ID  : %3.1d NAT_SERVERINFO" % message_id)
-            print("Packet Size : ", packet_size)
-            offset += self.__unpack_server_info(
-                data[offset:], packet_size, major, minor
-            )
-
         elif message_id == NAT_RESPONSE:
-            print("Message ID  : %3.1d NAT_RESPONSE" % message_id)
-            print("Packet Size : ", packet_size)
+            #print("Message ID  : %3.1d NAT_RESPONSE" % message_id)
+            #print("Packet Size : ", packet_size)
             if packet_size == 4:
                 command_response = int.from_bytes(
                     data[offset: offset + 4], byteorder="little"
                 )
                 offset += 4
-                print("Command response: %d" % command_response)
+                #print("Command response: %d" % command_response)
             else:
                 show_remainder = False
                 message, separator, remainder = bytes(data[offset:]).partition(b"\0")
@@ -101,29 +105,29 @@ class Unpacker:
                         " remainder:",
                         remainder,
                     )
-                else:
-                    print("Command response:", message.decode("utf-8"))
-        elif message_id == NAT_UNRECOGNIZED_REQUEST:
-            print("Message ID  : %3.1d NAT_UNRECOGNIZED_REQUEST: " % message_id)
-            print("Packet Size : ", packet_size)
-            print("Received 'Unrecognized request' from server")
-        elif message_id == NAT_MESSAGESTRING:
-            print("Message ID  : %3.1d NAT_MESSAGESTRING" % message_id)
-            print("Packet Size : ", packet_size)
-            message, separator, remainder = bytes(data[offset:]).partition(b"\0")
-            offset += len(message) + 1
-            print("Received message from server:", message.decode("utf-8"))
-        else:
-            print("Message ID  : %3.1d UNKNOWN" % message_id)
-            print("Packet Size : ", packet_size)
-            print("ERROR: Unrecognized packet type")
+                #else:
+                    #print("Command response:", message.decode("utf-8"))
+        #elif message_id == NAT_UNRECOGNIZED_REQUEST:
+            #print("Message ID  : %3.1d NAT_UNRECOGNIZED_REQUEST: " % message_id)
+            #print("Packet Size : ", packet_size)
+            #print("Received 'Unrecognized request' from server")
+        #elif message_id == NAT_MESSAGESTRING:
+            #print("Message ID  : %3.1d NAT_MESSAGESTRING" % message_id)
+            #print("Packet Size : ", packet_size)
+            #message, separator, remainder = bytes(data[offset:]).partition(b"\0")
+            #offset += len(message) + 1
+            #print("Received message from server:", message.decode("utf-8"))
+        #else:
+            #print("Message ID  : %3.1d UNKNOWN" % message_id)
+           # print("Packet Size : ", packet_size)
+           # print("ERROR: Unrecognized packet type")
 
-        print("End Packet\n-----------------")
-        return message_id
+       # print("End Packet\n-----------------")
+        return message_id, major, minor
 
     def __unpack_mocap_data(self, data: bytes, packet_size, major, minor):
         mocap_data = MoCapData.MoCapData()
-        print("MoCap Frame Begin\n-----------------")
+        #print("MoCap Frame Begin\n-----------------")
         data = memoryview(data)
         offset = 0
         rel_offset = 0
@@ -212,10 +216,22 @@ class Unpacker:
             data_dict["stamp_data_received"] = stamp_data_received
 
             self.new_frame_listener(data_dict)
-        print("MoCap Frame End\n-----------------")
+        #print("MoCap Frame End\n-----------------")
         return offset, mocap_data
 
-    def __unpack_server_info(self, data, packet_size, major, minor):
+    def __unpack_rigid_body_description(self, data, major, minor):
+        rb_desc = DataDescriptions.RigidBodyDescription()
+        offset = 0
+
+        # Version 2.0 or higher
+        if (major >= 2) or (major == 0):
+            name, separator, remainder = bytes(data[offset:]).partition(b"\0")
+            offset += len(name) + 1
+            rb_desc.set_name(name)
+            # trace_dd("\tRigid Body Name   : ", name.decode("utf-8"))
+            print(f"1: {name}")
+
+    def __unpack_server_info(self, data, packet_size):
         offset = 0
         # Server name
         # szName = data[offset: offset+256]
@@ -227,62 +243,62 @@ class Unpacker:
         # Server Version info
         server_version = struct.unpack("BBBB", data[offset : offset + 4])
         offset += 4
-        self.__server_version[0] = server_version[0]
-        self.__server_version[1] = server_version[1]
-        self.__server_version[2] = server_version[2]
-        self.__server_version[3] = server_version[3]
+        # self.__server_version[0] = server_version[0]
+        # self.__server_version[1] = server_version[1]
+        # self.__server_version[2] = server_version[2]
+        # self.__server_version[3] = server_version[3]
 
         # NatNet Version info
         nnsvs = struct.unpack("BBBB", data[offset : offset + 4])
         offset += 4
-        self.__nat_net_stream_version_server[0] = nnsvs[0]
-        self.__nat_net_stream_version_server[1] = nnsvs[1]
-        self.__nat_net_stream_version_server[2] = nnsvs[2]
-        self.__nat_net_stream_version_server[3] = nnsvs[3]
-        if (self.__nat_net_requested_version[0] == 0) and (
-            self.__nat_net_requested_version[1] == 0
-        ):
-            self.__nat_net_requested_version[0] = self.__nat_net_stream_version_server[
-                0
-            ]
-            self.__nat_net_requested_version[1] = self.__nat_net_stream_version_server[
-                1
-            ]
-            self.__nat_net_requested_version[2] = self.__nat_net_stream_version_server[
-                2
-            ]
-            self.__nat_net_requested_version[3] = self.__nat_net_stream_version_server[
-                3
-            ]
-            # Determine if the bitstream version can be changed
-            if (self.__nat_net_stream_version_server[0] >= 4) and (
-                not self.use_multicast
-            ):
-                self.__can_change_bitstream_version = True
+        major = nnsvs[0]
+        minor = nnsvs[1]
+        # self.__nat_net_stream_version_server[2] = nnsvs[2]
+        # self.__nat_net_stream_version_server[3] = nnsvs[3]
+        # if (self.__nat_net_requested_version[0] == 0) and (
+        #     self.__nat_net_requested_version[1] == 0
+        # ):
+        #     self.__nat_net_requested_version[0] = self.__nat_net_stream_version_server[
+        #         0
+        #     ]
+        #     self.__nat_net_requested_version[1] = self.__nat_net_stream_version_server[
+        #         1
+        #     ]
+        #     self.__nat_net_requested_version[2] = self.__nat_net_stream_version_server[
+        #         2
+        #     ]
+        #     self.__nat_net_requested_version[3] = self.__nat_net_stream_version_server[
+        #         3
+        #     ]
+        #     # Determine if the bitstream version can be changed
+        #     if (self.__nat_net_stream_version_server[0] >= 4) and (
+        #         not self.use_multicast
+        #     ):
+        #         self.__can_change_bitstream_version = True
 
-        print("Sending Application Name: ", self.__application_name)
-        print(
-            "NatNetVersion ",
-            str(self.__nat_net_stream_version_server[0]),
-            " ",
-            str(self.__nat_net_stream_version_server[1]),
-            " ",
-            str(self.__nat_net_stream_version_server[2]),
-            " ",
-            str(self.__nat_net_stream_version_server[3]),
-        )
+        #print("Sending Application Name: ", self.__application_name)
+        #print(
+         #   "NatNetVersion ",
+          #  str(self.__nat_net_stream_version_server[0]),
+           # " ",
+            #str(self.__nat_net_stream_version_server[1]),
+            #" ",
+            #str(self.__nat_net_stream_version_server[2]),
+            #" ",
+            #str(self.__nat_net_stream_version_server[3]),
+        #)
 
-        print(
-            "ServerVersion ",
-            str(self.__server_version[0]),
-            " ",
-            str(self.__server_version[1]),
-            " ",
-            str(self.__server_version[2]),
-            " ",
-            str(self.__server_version[3]),
-        )
-        return offset
+        #print(
+        #    "ServerVersion ",
+         #   str(self.__server_version[0]),
+          #  " ",
+           # str(self.__server_version[1]),
+            #" ",
+            #str(self.__server_version[2]),
+            #" ",
+            #str(self.__server_version[3]),
+        #)
+        return major, minor
 
     def __unpack_skeleton_data(self, data, packet_size, major, minor):
         skeleton_data = MoCapData.SkeletonData()
@@ -295,7 +311,7 @@ class Unpacker:
                 data[offset: offset + 4], byteorder="little"
             )
             offset += 4
-            print("Skeleton Count:", skeleton_count)
+            #print("Skeleton Count:", skeleton_count)
             for _ in range(0, skeleton_count):
                 rel_offset, skeleton = self.__unpack_skeleton(
                     data[offset:], major, minor
@@ -315,7 +331,7 @@ class Unpacker:
                 data[offset: offset + 4], byteorder="little"
             )
             offset += 4
-            print("Labeled Marker Count:", labeled_marker_count)
+            #print("Labeled Marker Count:", labeled_marker_count)
             for _ in range(0, labeled_marker_count):
                 model_id = 0
                 marker_id = 0
@@ -326,12 +342,12 @@ class Unpacker:
                 offset += 12
                 size = FloatValue.unpack(data[offset: offset + 4])
                 offset += 4
-                print(
-                    "ID     : [MarkerID: %3.1d] [ModelID: %3.1d]"
-                    % (marker_id, model_id)
-                )
-                print("  pos  : [%3.2f, %3.2f, %3.2f]" % (pos[0], pos[1], pos[2]))
-                print("  size : [%3.2f]" % size)
+                #print(
+                 #   "ID     : [MarkerID: %3.1d] [ModelID: %3.1d]"
+                  #  % (marker_id, model_id)
+                #)
+                #print("  pos  : [%3.2f, %3.2f, %3.2f]" % (pos[0], pos[1], pos[2]))
+                #print("  size : [%3.2f]" % size)
 
                 # Version 2.6 and later
                 param = 0
@@ -347,7 +363,7 @@ class Unpacker:
                 if major >= 3:
                     (residual,) = FloatValue.unpack(data[offset: offset + 4])
                     offset += 4
-                    print("  err  : [%3.2f]" % residual)
+                    #print("  err  : [%3.2f]" % residual)
 
                 labeled_marker = MoCapData.LabeledMarker(
                     tmp_id, pos, size, param, residual
@@ -367,7 +383,7 @@ class Unpacker:
                 data[offset: offset + 4], byteorder="little"
             )
             offset += 4
-            print("Force Plate Count:", force_plate_count)
+            #print("Force Plate Count:", force_plate_count)
             for i in range(0, force_plate_count):
                 # ID
                 force_plate_id = int.from_bytes(
@@ -382,10 +398,10 @@ class Unpacker:
                 )
                 offset += 4
 
-                print(
-                    "\tForce Plate %3.1d ID: %3.1d Num Channels: %3.1d"
-                    % (i, force_plate_id, force_plate_channel_count)
-                )
+ #               print(
+  #                  "\tForce Plate %3.1d ID: %3.1d Num Channels: %3.1d"
+   #                 % (i, force_plate_id, force_plate_channel_count)
+    #            )
 
                 # Channel Data
                 for j in range(force_plate_channel_count):
@@ -417,7 +433,7 @@ class Unpacker:
                             n_frames_show,
                             force_plate_channel_frame_count,
                         )
-                    print("%s" % out_string)
+                    #print("%s" % out_string)
                     force_plate.add_channel_data(fp_channel_data)
                 force_plate_data.add_force_plate(force_plate)
         return offset, force_plate_data
@@ -431,7 +447,7 @@ class Unpacker:
         if (major == 2 and minor >= 11) or (major > 2):
             device_count = int.from_bytes(data[offset: offset + 4], byteorder="little")
             offset += 4
-            print("Device Count:", device_count)
+            #print("Device Count:", device_count)
             for i in range(0, device_count):
 
                 # ID
@@ -446,10 +462,10 @@ class Unpacker:
                 )
                 offset += 4
 
-                print(
-                    "\tDevice %3.1d      ID: %3.1d Num Channels: %3.1d"
-                    % (i, device_id, device_channel_count)
-                )
+         #       print(
+          #          "\tDevice %3.1d      ID: %3.1d Num Channels: %3.1d"
+           #         % (i, device_id, device_channel_count)
+            #    )
 
                 # Channel Data
                 for j in range(0, device_channel_count):
@@ -482,7 +498,7 @@ class Unpacker:
                             n_frames_show,
                             device_channel_frame_count,
                         )
-                    print("%s" % out_string)
+               #     print("%s" % out_string)
                     device.add_channel_data(device_channel_data)
                 device_data.add_device(device)
         return offset, device_data
@@ -493,7 +509,7 @@ class Unpacker:
         # Rigid body count (4 bytes)
         rigid_body_count = int.from_bytes(data[offset: offset + 4], byteorder="little")
         offset += 4
-        print("Rigid Body Count:", rigid_body_count)
+       # print("Rigid Body Count:", rigid_body_count)
 
         for i in range(0, rigid_body_count):
             offset_tmp, rigid_body = self.__unpack_rigid_body(
@@ -511,19 +527,21 @@ class Unpacker:
         new_id = int.from_bytes(data[offset : offset + 4], byteorder="little")
         offset += 4
 
-        print("RB: %3.1d ID: %3.1d" % (rb_num, new_id))
+       # print("RB: %3.1d ID: %3.1d" % (rb_num, new_id))
 
         # Position and orientation
         pos = Vector3.unpack(data[offset : offset + 12])
         offset += 12
-        print("\tPosition    : [%3.2f, %3.2f, %3.2f]" % (pos[0], pos[1], pos[2]))
+     #   print("\tPosition    : [%3.2f, %3.2f, %3.2f]" % (pos[0], pos[1], pos[2]))
 
         rot = Quaternion.unpack(data[offset : offset + 16])
         offset += 16
-        print(
-            "\tOrientation : [%3.2f, %3.2f, %3.2f, %3.2f]"
-            % (rot[0], rot[1], rot[2], rot[3])
-        )
+  #      print(
+   #         "\tOrientation : [%3.2f, %3.2f, %3.2f, %3.2f]"
+    #        % (rot[0], rot[1], rot[2], rot[3])
+     #   )
+
+        self.__unpack_rigid_body_description(data, major, minor)
 
         rigid_body = MoCapData.RigidBody(new_id, pos, rot)
 
@@ -533,7 +551,7 @@ class Unpacker:
             marker_count = int.from_bytes(data[offset : offset + 4], byteorder="little")
             offset += 4
             marker_count_range = range(0, marker_count)
-            print("\tMarker Count:", marker_count)
+           # print("\tMarker Count:", marker_count)
 
             rb_marker_list = []
             for i in marker_count_range:
@@ -543,7 +561,7 @@ class Unpacker:
             for i in marker_count_range:
                 pos = Vector3.unpack(data[offset : offset + 12])
                 offset += 12
-                print("\tMarker", i, ":", pos[0], ",", pos[1], ",", pos[2])
+               # print("\tMarker", i, ":", pos[0], ",", pos[1], ",", pos[2])
                 rb_marker_list[i].pos = pos
 
             if major >= 2:
@@ -553,22 +571,23 @@ class Unpacker:
                         data[offset : offset + 4], byteorder="little"
                     )
                     offset += 4
-                    print("\tMarker ID", i, ":", new_id)
+                   # print("\tMarker ID", i, ":", new_id)
                     rb_marker_list[i].id = new_id
 
                 # Marker sizes
                 for i in marker_count_range:
                     size = FloatValue.unpack(data[offset : offset + 4])
                     offset += 4
-                    print("\tMarker Size", i, ":", size[0])
+                   # print("\tMarker Size", i, ":", size[0])
                     rb_marker_list[i].size = size
 
             for i in marker_count_range:
                 rigid_body.add_rigid_body_marker(rb_marker_list[i])
+
         if major >= 2:
             (marker_error,) = FloatValue.unpack(data[offset : offset + 4])
             offset += 4
-            print("\tMarker Error: %3.2f" % marker_error)
+           # print("\tMarker Error: %3.2f" % marker_error)
             rigid_body.error = marker_error
 
         # Version 2.6 and later
@@ -579,7 +598,7 @@ class Unpacker:
             is_valid_str = "False"
             if tracking_valid:
                 is_valid_str = "True"
-            print("\tTracking Valid: %s" % is_valid_str)
+           # print("\tTracking Valid: %s" % is_valid_str)
             if tracking_valid:
                 rigid_body.tracking_valid = True
             else:
@@ -611,7 +630,7 @@ class Unpacker:
         else:
             (timestamp,) = FloatValue.unpack(data[offset : offset + 4])
             offset += 4
-        print("Timestamp : %3.2f" % timestamp)
+        #print("Timestamp : %3.2f" % timestamp)
         frame_suffix_data.timestamp = timestamp
 
         # Hires Timestamp (Version 3.0 and later)
@@ -619,9 +638,9 @@ class Unpacker:
             stamp_camera_mid_exposure = int.from_bytes(
                 data[offset : offset + 8], byteorder="little"
             )
-            print(
-                "Mid-exposure timestamp         : %3.1d" % stamp_camera_mid_exposure
-            )
+            #print(
+           #     "Mid-exposure timestamp         : %3.1d" % stamp_camera_mid_exposure
+          #  )
             offset += 8
             frame_suffix_data.stamp_camera_mid_exposure = stamp_camera_mid_exposure
 
@@ -630,13 +649,13 @@ class Unpacker:
             )
             offset += 8
             frame_suffix_data.stamp_data_received = stamp_data_received
-            print("Camera data received timestamp : %3.1d" % stamp_data_received)
+           # print("Camera data received timestamp : %3.1d" % stamp_data_received)
 
             stamp_transmit = int.from_bytes(
                 data[offset : offset + 8], byteorder="little"
             )
             offset += 8
-            print("Transmit timestamp             : %3.1d" % stamp_transmit)
+          #  print("Transmit timestamp             : %3.1d" % stamp_transmit)
             frame_suffix_data.stamp_transmit = stamp_transmit
 
         # Frame parameters
@@ -655,7 +674,7 @@ class Unpacker:
         # Frame number (4 bytes)
         frame_number = int.from_bytes(data[offset : offset + 4], byteorder="little")
         offset += 4
-        print("Frame #:", frame_number)
+       # print("Frame #:", frame_number)
         frame_prefix_data = MoCapData.FramePrefixData(frame_number)
         return offset, frame_prefix_data
 
@@ -665,26 +684,26 @@ class Unpacker:
         # Marker set count (4 bytes)
         marker_set_count = int.from_bytes(data[offset : offset + 4], byteorder="little")
         offset += 4
-        print("Marker Set Count:", marker_set_count)
+      #  print("Marker Set Count:", marker_set_count)
 
         for i in range(0, marker_set_count):
             marker_data = MoCapData.MarkerData()
             # Model name
             model_name, separator, remainder = bytes(data[offset:]).partition(b"\0")
             offset += len(model_name) + 1
-            print("Model Name      : ", model_name.decode("utf-8"))
+           # print("Model Name      : ", model_name.decode("utf-8"))
             marker_data.set_model_name(model_name)
             # Marker count (4 bytes)
             marker_count = int.from_bytes(data[offset : offset + 4], byteorder="little")
             offset += 4
-            print("Marker Count    : ", marker_count)
+          #  print("Marker Count    : ", marker_count)
 
             for j in range(0, marker_count):
                 pos = Vector3.unpack(data[offset : offset + 12])
                 offset += 12
-                print(
-                    "\tMarker %3.1d : [%3.2f,%3.2f,%3.2f]" % (j, pos[0], pos[1], pos[2])
-                )
+             #   print(
+              #      "\tMarker %3.1d : [%3.2f,%3.2f,%3.2f]" % (j, pos[0], pos[1], pos[2])
+               # )
                 marker_data.add_pos(pos)
             marker_set_data.add_marker_data(marker_data)
 
@@ -693,13 +712,13 @@ class Unpacker:
             data[offset : offset + 4], byteorder="little"
         )
         offset += 4
-        print("Unlabeled Markers Count:", unlabeled_markers_count)
+        #print("Unlabeled Markers Count:", unlabeled_markers_count)
 
         for i in range(0, unlabeled_markers_count):
             pos = Vector3.unpack(data[offset : offset + 12])
             offset += 12
-            print(
-                "\tMarker %3.1d : [%3.2f,%3.2f,%3.2f]" % (i, pos[0], pos[1], pos[2])
-            )
+            #print(
+             #   "\tMarker %3.1d : [%3.2f,%3.2f,%3.2f]" % (i, pos[0], pos[1], pos[2])
+            #)
             marker_set_data.add_unlabeled_marker(pos)
         return offset, marker_set_data

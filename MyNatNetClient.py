@@ -59,7 +59,7 @@ class NatNetClient:
         self.__nat_net_stream_version_server = [0, 0, 0, 0]
 
         # NatNet stream version. This will be updated to the actual version the server is using during runtime.
-        self.__nat_net_requested_version = [0, 0, 0, 0]
+        self.__nat_net_requested_version = [4, 0, 0, 0]
 
         # server stream version. This will be updated to the actual version the server is using during initialization.
         self.__server_version = [0, 0, 0, 0]
@@ -77,6 +77,8 @@ class NatNetClient:
         self.data_socket = None
 
         self.stop_threads = False
+        self.major = 0
+        self.minor = 0
 
     def set_client_address(self, local_ip_address):
         pass
@@ -301,6 +303,11 @@ class NatNetClient:
     def request_model_definitions(self):
         self.send_request(self.command_socket, NAT_REQUEST_MODELDEF, "", (self.server_ip_address, self.command_port))
 
+    def request_data_descriptions(s_client):
+        # Request the model definitions
+        s_client.send_request(s_client.command_socket, s_client.NAT_REQUEST_MODELDEF, "",
+                              (s_client.server_ip_address, s_client.command_port))
+
     def send_request(self, in_socket, command, command_str, address):
         # Compose the message in our known message format
         packet_size = 0
@@ -327,18 +334,9 @@ class NatNetClient:
 
         return in_socket.sendto(data, address)
 
-    def get_major(self):
-        return self.__nat_net_requested_version[0]
-
-    def get_minor(self):
-        return self.__nat_net_requested_version[1]
-
     def __process_message(self, data: bytes, print_level=0):
-        # return message ID
-        major = self.get_major()
-        minor = self.get_minor()
 
-        print("Begin Packet\n-----------------")
+        #print("Begin Packet\n-----------------")
         show_nat_net_version = False
         if show_nat_net_version:
             print(
@@ -352,5 +350,7 @@ class NatNetClient:
                 str(self.__nat_net_requested_version[3]),
             )
 
-        message_id = Unpacker(self.rigid_body_listener, self.new_frame_listener).unpack(data, major, minor)
+        message_id, major, minor = Unpacker(self.rigid_body_listener, self.new_frame_listener).unpack(data, self.major, self.minor)
+        self.major = max(major, self.major)
+        self.minor = max(minor, self.minor)
         return message_id
