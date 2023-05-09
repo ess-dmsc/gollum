@@ -47,6 +47,7 @@ if __name__ == "__main__":
     data_listener = DataListener(args.multicast_address, args.local_address, 1511)
     rigid_bodies_map = {}
     last_update = time.monotonic()
+    count = 0
 
     try:
         while True:
@@ -60,41 +61,24 @@ if __name__ == "__main__":
 
                 data = data_listener.fetch_data()
                 timestamp = time.time_ns()
+                count += 1
+
+                if data and count < 5:
+                    # Only send every 5th update to avoid lag
+                    continue
+
+                count = 0
 
                 if frame_data := unpack_frame_data(data):
                     msgs = generate_flatbuffer_messages(
                         frame_data["rigid_bodies"], rigid_bodies_map, timestamp
                     )
-                    producer.produce(args.topic, msgs)bro
+                    producer.produce(args.topic, msgs)
             except Exception as error:
                 print(f"Gollum issue: {error}")
-
-            time.sleep(0.001)
+            time.sleep(0.0001)
     except KeyboardInterrupt:
         pass
     finally:
         data_listener.close()
         inquirer.close()
-
-    # listener = GollumListener(args.motive_client, args.motive_server)
-    # writer = GollumWriter(args.kafka_server)
-    #
-    # frame_msg_queue = listener.frame_msg_queue
-    # rigid_body_msg_queue = listener.rigid_body_msg_queue
-    #
-    # listener.start_streaming()
-    #
-    # while True:
-    #     frame_item = frame_msg_queue.get()
-    #     rigid_body_item = rigid_body_msg_queue.get()
-    #
-    #     stamp_data_received = frame_item["stamp_data_received"]
-    #
-    #     rigid_body_item["timestamp"] = time.time_ns()  # stamp_data_received
-    #     writer.produce("ymir_metrology", rigid_body_item) # gollum
-    #
-    #     frame_msg_queue.task_done()
-    #     rigid_body_msg_queue.task_done()
-
-
-# python main.py -mc 127.0.0.1 -ms 127.0.0.1 -ks 10.100.1.19:9092
