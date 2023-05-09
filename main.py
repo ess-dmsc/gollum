@@ -15,8 +15,9 @@ DATA_PORT = 1511
 NUM_TO_SKIP = 6
 
 
-def process_updates(broker, topic):
+def process_updates(job_queue, broker, topic):
     producer = GollumProducer(broker)
+    rigid_bodies_map = {}
 
     while True:
         data_type, data, timestamp = job_queue.get()
@@ -43,7 +44,7 @@ if __name__ == "__main__":
 
     job_queue = queue.Queue()
     threading.Thread(
-        target=process_updates, daemon=True, args=(args.kafka_broker, args.topic)
+        target=process_updates, daemon=True, args=(job_queue, args.kafka_broker, args.topic)
     ).start()
 
     inquirer = Inquirer(args.local_address, COMMAND_PORT)
@@ -62,7 +63,7 @@ if __name__ == "__main__":
                     }
                     last_update = time.monotonic()
                     job_queue.put(
-                        (BODY_NAMES, list(rigid_bodies_map.values()), time.time_ns())
+                        (BODY_NAMES, rigid_bodies_map, time.time_ns())
                     )
 
                 timestamp = time.time_ns()
@@ -77,7 +78,7 @@ if __name__ == "__main__":
                 job_queue.put((FRAME_DATA, data, timestamp))
             except Exception as error:
                 print(f"Gollum issue: {error}")
-            time.sleep(0.0001)
+                time.sleep(1)
     except KeyboardInterrupt:
         pass
     finally:
