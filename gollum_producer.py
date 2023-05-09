@@ -1,6 +1,8 @@
+import json
+
 from confluent_kafka import Producer
-from streaming_data_types import serialise_f144
 from scipy.spatial.transform import Rotation
+from streaming_data_types import serialise_f144, serialise_json
 
 
 def convert_rigid_bodies_to_flatbuffers(rigid_bodies, id_map, timestamp):
@@ -27,6 +29,11 @@ def convert_rigid_bodies_to_flatbuffers(rigid_bodies, id_map, timestamp):
         )
 
     return messages
+
+
+def convert_rigid_body_names_to_flatbuffers(names, timestamp):
+    data = {"timestamp": timestamp, "names": names}
+    return [serialise_json(json.dumps(data))]
 
 
 class GollumProducer:

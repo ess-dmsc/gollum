@@ -1,7 +1,7 @@
-from confluent_kafka import Consumer
 import uuid
-from streaming_data_types import deserialise_f144
 
+from confluent_kafka import Consumer
+from streaming_data_types import deserialise_f144, deserialise_json
 
 consumer_config = {
     "bootstrap.servers": "10.100.1.19:9092",
@@ -16,4 +16,7 @@ while True:
     if msg is None:
         continue
     elif msg.value():
-        print(deserialise_f144(msg.value()))
+        try:
+            print(deserialise_f144(msg.value()))
+        except:
+            print("\nNAMES", deserialise_json(msg.value()), "\n")
