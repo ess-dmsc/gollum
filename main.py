@@ -65,8 +65,8 @@ if __name__ == "__main__":
                     msgs = generate_flatbuffer_messages(
                         frame_data["rigid_bodies"], rigid_bodies_map, timestamp
                     )
-                    producer.produce(args.topic, msgs)
-            except RuntimeError as error:
+                    producer.produce(args.topic, msgs)bro
+            except Exception as error:
                 print(f"Gollum issue: {error}")
 
             time.sleep(0.001)

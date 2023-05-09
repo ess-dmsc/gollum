@@ -17,7 +17,7 @@ FP_CORNERS = struct.Struct("<ffffffffffff")
 
 
 def create_data_socket(multicast_address, local_address, port):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.setsockopt(
         socket.IPPROTO_IP,
