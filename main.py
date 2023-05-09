@@ -1,37 +1,8 @@
 import argparse
 import time
 
-from scipy.spatial.transform import Rotation
-from streaming_data_types import serialise_f144
-
 from gollum_client import DataListener, Inquirer, unpack_frame_data
-from gollum_producer import GollumProducer
-
-
-def generate_flatbuffer_messages(rigid_bodies, id_map, timestamp):
-    messages = []
-    for body in rigid_bodies:
-        body_name = id_map[body["id"]]
-
-        #  TODO: Are the axis in the right direction for nexus?
-        for axis, value in zip(["x", "y", "z"], body["pos"]):
-            name = f"{body_name}:pos:{axis}"
-            messages.append(serialise_f144(name, value, timestamp))
-
-        #  TODO: Check the values are correct.
-        #  TODO: Does nexus want deg or rad?
-        #  TODO: Are the axis in the right direction for nexus?
-        #  TODO: can motive give us euler instead of quats? It can when dumping to csv...
-        euler = Rotation.from_quat(body["rot"]).as_euler("xyz", degrees=True)
-        for axis, value in zip(["x", "y", "z"], euler):
-            name = f"{body_name}:rot:{axis}"
-            messages.append(serialise_f144(name, value, timestamp))
-
-        messages.append(
-            serialise_f144(f"{body_name}:valid", 1 if body["valid"] else 0, timestamp)
-        )
-
-    return messages
+from gollum_producer import GollumProducer, convert_rigid_bodies_to_flatbuffers
 
 
 if __name__ == "__main__":
@@ -70,7 +41,7 @@ if __name__ == "__main__":
                 count = 0
 
                 if frame_data := unpack_frame_data(data):
-                    msgs = generate_flatbuffer_messages(
+                    msgs = convert_rigid_bodies_to_flatbuffers(
                         frame_data["rigid_bodies"], rigid_bodies_map, timestamp
                     )
                     producer.produce(args.topic, msgs)
