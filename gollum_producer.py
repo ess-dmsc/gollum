@@ -47,4 +47,8 @@ class GollumProducer:
     def produce(self, topic, messages):
         for msg in messages:
             self.producer.produce(topic, msg)
+        # A quick flush!
+        print("flush", self.producer.flush(timeout=0))
+
+    def close(self):
         self.producer.flush()
