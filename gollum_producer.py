@@ -37,11 +37,12 @@ def convert_rigid_body_names_to_flatbuffers(names, timestamp):
 
 
 class GollumProducer:
-    def __init__(self, kafka_server):
+    def __init__(self, kafka_server, security_config):
         producer_config = {
             "bootstrap.servers": kafka_server,
             "message.max.bytes": "20000000",
         }
+        producer_config.update(security_config)
         self.producer = Producer(producer_config)
 
     def produce(self, topic, messages):

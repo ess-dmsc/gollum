@@ -1,3 +1,4 @@
+ConfigArgParse==1.5.3
 confluent-kafka
 ess-streaming-data-types>=0.22.1
 scipy
