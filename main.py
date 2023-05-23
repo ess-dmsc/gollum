@@ -77,6 +77,7 @@ if __name__ == "__main__":
         while True:
             try:
                 if not rigid_bodies_map or time.monotonic() > last_update + 1.0:
+                    # Updates the list of components tracked by Gollum
                     rigid_bodies = inquirer.request_rigid_bodies()
                     rigid_bodies_map = {
                         body["id"]: body["name"].decode() for body in rigid_bodies
