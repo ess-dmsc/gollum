@@ -38,7 +38,7 @@ def receive_data(data_socket):
 
 
 def get_message_id(data, offset):
-    return 2, int.from_bytes(data[0:2], byteorder="little")
+    return offset + 2, int.from_bytes(data[0:2], byteorder="little")
 
 
 def get_packet_size(data, offset):
