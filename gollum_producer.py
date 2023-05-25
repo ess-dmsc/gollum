@@ -16,7 +16,7 @@ def convert_rigid_bodies_to_flatbuffers(rigid_bodies, id_map, timestamp):
             messages.append(serialise_f144(name, value, timestamp))
 
         #  TODO: Check the values are correct.
-        #  TODO: Does nexus want deg or rad?
+        #  TODO: Does nexus want deg or rad?!
         #  TODO: Are the axis in the right direction for nexus?
         #  TODO: can motive give us euler instead of quats? It can when dumping to csv...
         euler = Rotation.from_quat(body["rot"]).as_euler("xyz", degrees=True)
