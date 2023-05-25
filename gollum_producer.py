@@ -12,7 +12,7 @@ def convert_rigid_bodies_to_flatbuffers(rigid_bodies, id_map, timestamp):
 
         #  TODO: Are the axis in the right direction for nexus?
         for axis, value in zip(["x", "y", "z"], body["pos"]):
-            name = f"{body_name}:pos:{axis}"
+            name = f"{body_name}:{axis}"
             messages.append(serialise_f144(name, value, timestamp))
 
         #  TODO: Check the values are correct.
@@ -21,7 +21,7 @@ def convert_rigid_bodies_to_flatbuffers(rigid_bodies, id_map, timestamp):
         #  TODO: can motive give us euler instead of quats? It can when dumping to csv...
         euler = Rotation.from_quat(body["rot"]).as_euler("xyz", degrees=True)
         for axis, value in zip(["alpha", "beta", "gamma"], euler):
-            name = f"{body_name}:rot:{axis}"
+            name = f"{body_name}:{axis}"
             messages.append(serialise_f144(name, value, timestamp))
 
         messages.append(
