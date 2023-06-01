@@ -1,6 +1,6 @@
 # Metrology System Data Streaming
 
-Listens to data transmitted by the Metrology System software (Motive) and forwards them to kafka.
+Listens to data transmitted by the Metrology System software (Motive) and forwards them to Ksafka.
 
 ## Usage
 
