@@ -4,11 +4,15 @@ Listens to data transmitted by the Metrology System software (Motive) and forwar
 
 ## Usage
 
-Run main.py, including the following arguments:
-
-Argument 1 is the _Motive_ client address ("-mc", "--motive_client"): 127.0.0.1  
-Argument 2 is the _Motive_ server address ("-ms", "--motive_server"): 127.0.0.1  
-Argument 3 is the _Kafka_ server address ("-ks", "--kafka_server"): [::1]:9092  
+```
+python main.py --multicast_address 127.0.0.1 --local_address 127.0.0.1 --kafka_broker 10.100.1.19:9092 --topic ymir_gollum
+```
+Also possible to supply Kafka security settings:
+- --security-protocol
+- --sasl-mechanism
+- --sasl-username
+- --sasl-password
+- --ssl-cafile
 
 ## Important Info
 
