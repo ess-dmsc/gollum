@@ -5,24 +5,18 @@ from scipy.spatial.transform import Rotation
 from streaming_data_types import serialise_f144, serialise_json
 
 
-def convert_rigid_bodies_to_flatbuffers(rigid_bodies, id_map, timestamp):
+def convert_rigid_body_to_flatbuffers(body, body_name, timestamp):
     messages = []
-    for body in rigid_bodies:
-        body_name = id_map[body["id"]]
-
-        for axis, value in zip(["x", "y", "z"], body["pos"]):
-            name = f"{body_name}:{axis}"
-            messages.append(serialise_f144(name, value, timestamp))
-
-        euler = Rotation.from_quat(body["rot"]).as_euler("xyz", degrees=True)
-        for axis, value in zip(["alpha", "beta", "gamma"], euler):
-            name = f"{body_name}:{axis}"
-            messages.append(serialise_f144(name, value, timestamp))
-
-        messages.append(
-            serialise_f144(f"{body_name}:valid", 1 if body["valid"] else 0, timestamp)
-        )
-
+    for axis, value in zip(["x", "y", "z"], body["pos"]):
+        name = f"{body_name}:{axis}"
+        messages.append(serialise_f144(name, value, timestamp))
+    euler = Rotation.from_quat(body["rot"]).as_euler("xyz", degrees=True)
+    for axis, value in zip(["alpha", "beta", "gamma"], euler):
+        name = f"{body_name}:{axis}"
+        messages.append(serialise_f144(name, value, timestamp))
+    messages.append(
+        serialise_f144(f"{body_name}:valid", 1 if body["valid"] else 0, timestamp)
+    )
     return messages
 
 

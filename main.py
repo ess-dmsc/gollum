@@ -1,16 +1,17 @@
 import configargparse as argparse
 import time
 
+from collections import defaultdict
 from gollum_client import DataListener, Inquirer, unpack_frame_data
 from gollum_producer import (GollumProducer,
-                             convert_rigid_bodies_to_flatbuffers,
-                             convert_rigid_body_names_to_flatbuffers)
+                             convert_rigid_body_names_to_flatbuffers, convert_rigid_body_to_flatbuffers)
 from kafka_security import get_kafka_security_config
 
 FRAME_DATA = "frame_data"
 BODY_NAMES = "body_names"
 COMMAND_PORT = 1510
 DATA_PORT = 1511
+PUBLISH_MS = 500
 
 
 if __name__ == "__main__":
@@ -69,34 +70,33 @@ if __name__ == "__main__":
     inquirer = Inquirer(args.local_address, COMMAND_PORT)
     data_listener = DataListener(args.multicast_address, args.local_address, DATA_PORT)
     rigid_bodies_map = {}
-    last_update = time.monotonic()
-    count = 0
-    last_published = time.time()
+    last_rigid_body_update = time.monotonic()
+    last_published_ns = defaultdict(int)
 
     try:
         while True:
             try:
-                if not rigid_bodies_map or time.monotonic() > last_update + 1.0:
-                    # Updates the list of components tracked by Gollum
+                if not rigid_bodies_map or time.monotonic() > last_rigid_body_update + 1.0:
+                    # Check to see if rigid bodies definitions have changed
                     rigid_bodies = inquirer.request_rigid_bodies()
                     rigid_bodies_map = {
                         body["id"]: body["name"].decode() for body in rigid_bodies
                     }
-                    last_update = time.monotonic()
+                    last_rigid_body_update = time.monotonic()
                     msgs = convert_rigid_body_names_to_flatbuffers(list(rigid_bodies_map.values()), time.time_ns())
                     producer.produce(args.topic, msgs)
 
-                timestamp = time.time_ns()
+                timestamp_ns = time.time_ns()
                 data = data_listener.fetch_data()
 
                 if frame_data := unpack_frame_data(data):
-                    msgs = convert_rigid_bodies_to_flatbuffers(
-                        frame_data["rigid_bodies"], rigid_bodies_map, timestamp
-                    )
-                    producer.produce(args.topic, msgs)
-                    now = time.time()
-                    print(now - last_published)
-                    last_published = now
+                    bodies = frame_data["rigid_bodies"]
+                    for body in bodies:
+                        body_id = body["id"]
+                        if last_published_ns[body_id] + PUBLISH_MS * 1000000 < timestamp_ns:
+                            msgs = convert_rigid_body_to_flatbuffers(body, rigid_bodies_map[body_id], timestamp_ns)
+                            producer.produce(args.topic, msgs)
+                            last_published_ns[body_id] = timestamp_ns
             except Exception as error:
                 print(f"Gollum issue: {error}")
                 time.sleep(1)
