@@ -15,13 +15,17 @@ COMMAND_PORT = 1510
 DATA_PORT = 1511
 PUBLISH_MS = 500
 POSITION_DEADBAND = 0.00005
-ANGLE_DEADBAND = 0.1
+ROTATION_DEADBAND = 0.1
 
 def has_moved(last_pos, curr_pos, last_rot, curr_rot):
     pos_diff = np.linalg.norm(np.array(curr_pos)-np.array(last_pos))
     rot_diff = np.linalg.norm(Rotation.from_quat(curr_rot).as_euler("xyz", degrees=True) -
                               Rotation.from_quat(last_rot).as_euler("xyz", degrees=True))
-    return pos_diff > POSITION_DEADBAND or rot_diff > ANGLE_DEADBAND
+    if pos_diff > POSITION_DEADBAND:
+        print("position")
+    if rot_diff > ROTATION_DEADBAND:
+        print("rotation")
+    return pos_diff > POSITION_DEADBAND or rot_diff > ROTATION_DEADBAND
 
 
 if __name__ == "__main__":
