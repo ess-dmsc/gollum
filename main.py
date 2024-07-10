@@ -1,17 +1,27 @@
 import configargparse as argparse
 import time
+import numpy as np
 
 from collections import defaultdict
 from gollum_client import DataListener, Inquirer, unpack_frame_data
 from gollum_producer import (GollumProducer,
                              convert_rigid_body_names_to_flatbuffers, convert_rigid_body_to_flatbuffers)
 from kafka_security import get_kafka_security_config
+from scipy.spatial.transform import Rotation
 
 FRAME_DATA = "frame_data"
 BODY_NAMES = "body_names"
 COMMAND_PORT = 1510
 DATA_PORT = 1511
 PUBLISH_MS = 500
+POSITION_DEADBAND = 0.00005
+ANGLE_DEADBAND = 0.1
+
+def has_moved(last_pos, curr_pos, last_rot, curr_rot):
+    pos_diff = np.linalg.norm(np.array(curr_pos)-np.array(last_pos))
+    rot_diff = np.linalg.norm(Rotation.from_quat(curr_rot).as_euler("xyz", degrees=True) -
+                              Rotation.from_quat(last_rot).as_euler("xyz", degrees=True))
+    return pos_diff > POSITION_DEADBAND or rot_diff > ANGLE_DEADBAND
 
 
 if __name__ == "__main__":
@@ -72,6 +82,8 @@ if __name__ == "__main__":
     rigid_bodies_map = {}
     last_rigid_body_update = time.monotonic()
     last_published_ns = defaultdict(int)
+    last_positions = {}
+    last_rotations = {}
 
     try:
         while True:
@@ -93,10 +105,15 @@ if __name__ == "__main__":
                     bodies = frame_data["rigid_bodies"]
                     for body in bodies:
                         body_id = body["id"]
-                        if last_published_ns[body_id] + PUBLISH_MS * 1000000 < timestamp_ns:
+                        if (last_published_ns[body_id] + PUBLISH_MS * 1000000 < timestamp_ns or body_id not in
+                                last_positions or has_moved(last_positions[body_id], body["pos"],
+                                                            last_rotations[body_id], body["rot"])):
                             msgs = convert_rigid_body_to_flatbuffers(body, rigid_bodies_map[body_id], timestamp_ns)
                             producer.produce(args.topic, msgs)
+                            print(f"{body_id} moved")
                             last_published_ns[body_id] = timestamp_ns
+                            last_positions = body["pos"]
+                            last_rotations = body["rot"]
             except Exception as error:
                 print(f"Gollum issue: {error}")
                 time.sleep(1)
