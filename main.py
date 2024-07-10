@@ -109,9 +109,8 @@ if __name__ == "__main__":
                     bodies = frame_data["rigid_bodies"]
                     for body in bodies:
                         body_id = body["id"]
-                        if (last_published_ns[body_id] + PUBLISH_MS * 1000000 < timestamp_ns or body_id not in
-                                last_positions or has_moved(last_positions[body_id], body["pos"],
-                                                            last_rotations[body_id], body["rot"])):
+                        if body_id not in last_positions or has_moved(last_positions[body_id], body["pos"],
+                                                                      last_rotations[body_id], body["rot"]):
                             msgs = convert_rigid_body_to_flatbuffers(body, rigid_bodies_map[body_id], timestamp_ns)
                             producer.produce(args.topic, msgs)
                             print(f"{body_id} moved")
