@@ -18,11 +18,12 @@ POSITION_DEADBAND = 0.0005
 ROTATION_DEADBAND = 0.5
 
 
-def has_moved(last_pos, curr_pos, last_rot, curr_rot):
+def has_moved(last_pos, curr_pos, last_rot, curr_rot, last_valid, curr_valid):
     pos_diff = np.linalg.norm(np.array(curr_pos) - np.array(last_pos))
     rot_diff = np.linalg.norm(Rotation.from_quat(curr_rot).as_euler("xyz", degrees=True) -
                               Rotation.from_quat(last_rot).as_euler("xyz", degrees=True))
-    return pos_diff > POSITION_DEADBAND or rot_diff > ROTATION_DEADBAND
+
+    return pos_diff > POSITION_DEADBAND or rot_diff > ROTATION_DEADBAND or last_valid is not curr_valid
 
 
 if __name__ == "__main__":
@@ -85,6 +86,7 @@ if __name__ == "__main__":
     last_published_ns = defaultdict(int)
     last_positions = {}
     last_rotations = {}
+    is_valid = {}
 
     try:
         while True:
@@ -108,8 +110,8 @@ if __name__ == "__main__":
                         body_id = body["id"]
                         if (
                                 body_id not in last_positions
-                                or has_moved(last_positions[body_id], body["pos"], last_rotations[body_id], body["rot"])
-                                or body["valid"] == 0
+                                or has_moved(last_positions[body_id], body["pos"], last_rotations[body_id], body["rot"],
+                                             is_valid[body_id], body["valid"])
                                 and last_published_ns[body_id] + PUBLISH_MS * 1000000 < timestamp_ns
                         ):
                             msgs = convert_rigid_body_to_flatbuffers(body, rigid_bodies_map[body_id], timestamp_ns)
@@ -118,6 +120,7 @@ if __name__ == "__main__":
                             last_published_ns[body_id] = timestamp_ns
                             last_positions[body_id] = body["pos"]
                             last_rotations[body_id] = body["rot"]
+                            is_valid[body_id] = body["valid"]
             except Exception as error:
                 print(f"Gollum issue: {error}")
                 time.sleep(1)
