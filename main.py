@@ -116,7 +116,6 @@ if __name__ == "__main__":
                         ):
                             msgs = convert_rigid_body_to_flatbuffers(body, rigid_bodies_map[body_id], timestamp_ns)
                             producer.produce(args.topic, msgs)
-                            print(body)
                             last_published_ns[body_id] = timestamp_ns
                             last_positions[body_id] = body["pos"]
                             last_rotations[body_id] = body["rot"]
