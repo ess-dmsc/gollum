@@ -14,6 +14,9 @@ def convert_rigid_body_to_flatbuffers(body, body_name, timestamp):
     for axis, value in zip(["alpha", "beta", "gamma"], euler):
         name = f"{body_name}:{axis}"
         messages.append(serialise_f144(name, value, timestamp))
+    for axis, value in zip(["qx", "qy", "qz", "qw"], body["rot"]):
+        name = f"{body_name}:{axis}"
+        messages.append(serialise_f144(name, value, timestamp))
     messages.append(
         serialise_f144(f"{body_name}:valid", 1 if body["valid"] else 0, timestamp)
     )
