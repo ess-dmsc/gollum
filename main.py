@@ -108,18 +108,14 @@ if __name__ == "__main__":
                     bodies = frame_data["rigid_bodies"]
                     for body in bodies:
                         body_id = body["id"]
-                        if (
-                                body_id not in last_positions
-                                or has_moved(last_positions[body_id], body["pos"], last_rotations[body_id], body["rot"],
-                                             is_valid[body_id], body["valid"])
-                                and last_published_ns[body_id] + PUBLISH_MS * 1000000 < timestamp_ns
-                        ):
-                            msgs = convert_rigid_body_to_flatbuffers(body, rigid_bodies_map[body_id], timestamp_ns)
+                        if last_published_ns[body_id] + PUBLISH_MS * 1000000 < timestamp_ns:
+                            msgs = convert_rigid_body_to_flatbuffers(body, rigid_bodies_map[body_id], last_published_ns[body_id])
                             producer.produce(args.topic, msgs)
-                            last_published_ns[body_id] = timestamp_ns
-                            last_positions[body_id] = body["pos"]
-                            last_rotations[body_id] = body["rot"]
-                            is_valid[body_id] = body["valid"]
+                            if body_id not in last_positions or has_moved(last_positions[body_id], body["pos"], last_rotations[body_id], body["rot"], is_valid[body_id], body["valid"]):
+                                last_published_ns[body_id] = timestamp_ns
+                                last_positions[body_id] = body["pos"]
+                                last_rotations[body_id] = body["rot"]
+                                is_valid[body_id] = body["valid"]
             except Exception as error:
                 print(f"Gollum issue: {error}")
                 time.sleep(1)
